@@ -1,3 +1,4 @@
+// Available button colours
 var buttonColours = ["red", "blue", "green", "yellow"];
 
 // Array to store the game pattern
@@ -8,6 +9,9 @@ var userClickedPattern = [];
 
 // Keep track of the game's level
 var level = 0;
+
+// Game state
+var started = false;
 
 // Play sound for a given colour
 function playSound(name) {
@@ -24,7 +28,7 @@ function animatePress(currentColour) {
   }, 100);
 }
 
-// Add another colour to the sequence
+// Advance the game to the next sequence
 function nextSequence() {
   // Reset the user's pattern array
   userClickedPattern = [];
@@ -32,7 +36,7 @@ function nextSequence() {
   level++;
   $("#level-title").text("Level " + level);
 
-  // Get our next random colour
+  // Add another colour to the sequence
   var randomNumber = Math.floor(Math.random() * 4);
   var randomChosenColour = buttonColours[randomNumber];
   gamePattern.push(randomChosenColour);
@@ -42,44 +46,71 @@ function nextSequence() {
   playSound(randomChosenColour);
 }
 
-// Check if the user's sequence is correct
+// Check the user's answer
 function checkAnswer(currentLevel) {
-  // Check the user's most recent click
   if (userClickedPattern[currentLevel] === gamePattern[currentLevel]) {
-    console.log("success");
-  }
-  else {
-    console.log("wrong");
-  }
+    // User got the answer correct
 
-  // Check if the user has finished the sequence
-  if (userClickedPattern.length === gamePattern.length) {
+    // Check if the user has finished the sequence
+    if (userClickedPattern.length === gamePattern.length) {
+      setTimeout(function() {
+        nextSequence();
+      }, 1000);
+    }
+  } else {
+    // User got the answer wrong
+
+    // Game over sound
+    playSound("wrong");
+
+    // Game over animation
+    $("body").addClass("game-over");
     setTimeout(function() {
-      nextSequence();
-    }, 1000);
+      $("body").removeClass("game-over");
+    }, 200);
+
+    // Game over text
+    $("#level-title").text("Game Over! Press Spacebar to Restart!")
+
+    // Reset the game to starting state
+    startOver();
   }
 }
 
-// Log user button clicks and play sound
+// Reset game values
+function startOver() {
+  level = 0;
+  gamePattern = [];
+  started = false;
+}
+
+// Add sound, animation, and logic to button presses
 $(".btn").click(function() {
   var userChosenColour = $(this).attr("id");
-  userClickedPattern.push(userChosenColour);
 
   // Sound and animation for the pressed button
   playSound(userChosenColour);
   animatePress(userChosenColour);
 
-  // Check if the user's click is correct
-  checkAnswer(userClickedPattern.length - 1);
+  // Check correctness only if game has started
+  if (started) {
+    // Record user's answer
+    userClickedPattern.push(userChosenColour);
+    // Check if the user's click is correct
+    checkAnswer(userClickedPattern.length - 1);
+  }
 });
 
 // Detect whether game has started
-var started = false;
-$(document).keypress(function() {
-  // Start the game if it game isn't already in progress
-  if (!started) {
-    $("#level-title").text("Level " + level);
-    nextSequence();
-    started = true;
+$(document).keypress(function(event) {
+  if (event.code === "Space") {
+    // Start the game if it game isn't already in progress
+    if (!started) {
+      setTimeout(function() {
+        $("#level-title").text("Level " + level);
+        nextSequence();
+        started = true;
+      }, 500);
+    }
   }
 });
